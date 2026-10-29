@@ -1,0 +1,93 @@
+name: Publish review preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_marker:
+        description: Include the lane marker (remove only after review and human approval)
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: review-preview
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install and verify
+        run: |
+          corepack pnpm install --frozen-lockfile
+          corepack pnpm test
+          corepack pnpm typecheck
+      - name: Export self-contained HTML from running rig
+        env:
+          LANE_MARKER: ${{ inputs.include_marker && secrets.LANE_MARKER || '' }}
+          INCLUDE_MARKER: ${{ inputs.include_marker }}
+          PORT: '18787'
+        run: |
+          set -euo pipefail
+          if [[ "$INCLUDE_MARKER" == true && -z "$LANE_MARKER" ]]; then
+            echo 'Required lane marker secret is missing.' >&2
+            exit 1
+          fi
+          printf 'LANE_MARKER=%s\n' "$LANE_MARKER" > .env
+          mkdir -p "$RUNNER_TEMP/preview"
+          corepack pnpm start > "$RUNNER_TEMP/rig.log" 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true; rm -f .env' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18787/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent --show-error \
+            http://127.0.0.1:18787/digest/2026-10-28 \
+            --output "$RUNNER_TEMP/preview/index.html"
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+          const html = readFileSync(`${process.env.RUNNER_TEMP}/preview/index.html`, 'utf8');
+          const marker = process.env.LANE_MARKER;
+          if (marker ? !html.includes(marker) : !html.includes('no marker set')) {
+            throw new Error('Unexpected lane banner');
+          }
+          if (/<script\b|<(?:link|img|iframe)\b/i.test(html)) {
+            throw new Error('Preview must be self-contained');
+          }
+          if (!html.includes('bad lines: 1') || !html.includes('digest/render')) {
+            throw new Error('Unexpected sample digest');
+          }
+          console.log('Preview verified without printing its contents.');
+          JS
+      - uses: actions/upload-pages-artifact@v3
+        id: upload
+        with:
+          path: ${{ runner.temp }}/preview
+          retention-days: 1
+      - uses: actions/deploy-pages@v4
+        id: deployment
+      - name: Delete temporary HTML artifact after deployment
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact_id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
