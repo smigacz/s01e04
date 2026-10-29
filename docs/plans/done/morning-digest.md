@@ -1,6 +1,6 @@
 ---
 plan: morning-digest
-status: ready
+status: done
 owner: rook
 opened: 2026-10-29
 ---
@@ -77,3 +77,26 @@ page again with `LANE_MARKER` unset (the banner reads "no marker set") and uploa
 link. Move this plan to `docs/plans/done/` with its issue list.
 
 Done when: the preview link no longer shows the lane marker.
+
+## Issues
+
+- https://github.com/smigacz/s01e04/issues/1
+- https://github.com/smigacz/s01e04/issues/2
+- https://github.com/smigacz/s01e04/issues/3
+- https://github.com/smigacz/s01e04/issues/4
+- https://github.com/smigacz/s01e04/issues/5
+- https://github.com/smigacz/s01e04/issues/6
+- https://github.com/smigacz/s01e04/issues/7
+
+## Completion record
+
+Archive prepared on 2026-10-29 for issue #7. The original plan body above is preserved as
+historical scope and acceptance criteria; the seven GitHub issues are its work record.
+
+- The coordinator reports that the course confirmed the reviewer has seen the preview.
+- The human explicitly approved overwriting the same public URL without the lane marker.
+- The coordinator dispatched run `40837349786` with `include_marker=false` and owns the
+  independent public-page verification. This archive does not claim that verification passed.
+- This worker's completed scope is the plan archive and issue list only. The coordinator
+  will merge it only after verifying the public page meets section 4's done condition.
+- Final course completion remains pending; this archive is not a course-solved claim.
