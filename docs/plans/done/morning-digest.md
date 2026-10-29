@@ -95,8 +95,9 @@ historical scope and acceptance criteria; the seven GitHub issues are its work r
 
 - The coordinator reports that the course confirmed the reviewer has seen the preview.
 - The human explicitly approved overwriting the same public URL without the lane marker.
-- The coordinator dispatched run `40837349786` with `include_marker=false` and owns the
-  independent public-page verification. This archive does not claim that verification passed.
-- This worker's completed scope is the plan archive and issue list only. The coordinator
-  will merge it only after verifying the public page meets section 4's done condition.
+- Run `40837349786` completed with `include_marker=false`. The coordinator independently
+  fetched https://smigacz.github.io/s01e04/: HTTP 200, banner "no marker set", original marker
+  absent, and all five sample jobs retained. Section 4's public-page condition passed.
+- The worker prepared the plan archive and issue list; the coordinator integrated it only
+  after the public-page verification above.
 - Final course completion remains pending; this archive is not a course-solved claim.
