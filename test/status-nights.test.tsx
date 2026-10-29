@@ -1,4 +1,5 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -6,9 +7,14 @@ import { readStatus } from '../src/status.js';
 import { StatusBoard } from '../src/views/status.js';
 
 describe('status board night summaries', () => {
-  let runsDir: string;
-  beforeEach(async () => { runsDir = await mkdtemp('/tmp/opencode/rig-board-'); });
-  afterEach(async () => { await rm(runsDir, { recursive: true, force: true }); });
+  let runsDir = '';
+  beforeEach(async () => {
+    runsDir = '';
+    runsDir = await mkdtemp(join(tmpdir(), 'rig-board-'));
+  });
+  afterEach(async () => {
+    if (runsDir) await rm(runsDir, { recursive: true, force: true });
+  });
 
   function config() {
     return { adapter: 'shim', installed: '2026-10-29T14:06:00+01:00', beatEverySeconds: 60, runsDir };
